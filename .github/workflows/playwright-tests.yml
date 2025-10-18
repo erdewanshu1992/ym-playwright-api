@@ -10,18 +10,15 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16, 18, 20]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js ${{ matrix.node-version }}
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 'latest'
         cache: 'npm'
 
     - name: Install dependencies
@@ -37,7 +34,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report-node${{ matrix.node-version }}
+        name: playwright-report
         path: playwright-report/
         retention-days: 30
 
@@ -45,7 +42,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: junit-results-node${{ matrix.node-version }}
+        name: junit-results
         path: test-results/results.xml
         retention-days: 30
 
@@ -53,7 +50,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: json-results-node${{ matrix.node-version }}
+        name: json-results
         path: test-results/results.json
         retention-days: 30
 
@@ -67,6 +64,4 @@ jobs:
         echo "## Playwright Test Results" >> $GITHUB_STEP_SUMMARY
         echo "| Node Version | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|-------------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| 16 | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| 18 | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| 20 | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Latest (24+) | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY

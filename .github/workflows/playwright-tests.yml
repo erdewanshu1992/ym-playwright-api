@@ -1,0 +1,72 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright tests
+      run: npx playwright test --reporter=html,junit,json
+
+    - name: Upload HTML report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report-node${{ matrix.node-version }}
+        path: playwright-report/
+        retention-days: 30
+
+    - name: Upload JUnit results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: junit-results-node${{ matrix.node-version }}
+        path: test-results/results.xml
+        retention-days: 30
+
+    - name: Upload JSON results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: json-results-node${{ matrix.node-version }}
+        path: test-results/results.json
+        retention-days: 30
+
+  test-summary:
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Test Summary
+      run: |
+        echo "## Playwright Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Node Version | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| 16 | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| 18 | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| 20 | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
